@@ -35,12 +35,11 @@ class HTTPRequest(object):
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
-
     def connect(self, host, port):
         #if there is no port, make it 80
         if(port == None):
             port = 80
+
         #tries to create socket
         try:
             s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -76,41 +75,40 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
-
+        #Splits URL into its host and path
         url = urlparse(url)
         host = url.hostname
         directory = url.path
-    
         if(directory == ''):
             directory = '/'
         
+        #Creates the header that is to be sent to socket
         header = 'GET ' + directory + ' HTTP/1.1\r\n'
         header = header + 'Host: ' + host + '\r\n'
         header = header + 'Accept: */*\r\n'
         header = header + 'Connection: close\r\n'
         header = header + '\r\n'
          
+        #sends the header to through the socket
         sock = self.connect(host, url.port)
         sock.send(header)
         sock_return = self.recvall(sock)
 
+        #splits the return from the socket into a code number and body
         code = int(self.get_code(sock_return))
         body = self.get_body(sock_return)
 
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
-
+        #Splits URL into its host and path
         url = urlparse(url)
         host = url.hostname
         directory = url.path
         if(directory == ''):
             directory = '/'
         
+        #checks if there is a body wanted to be sent
         if(args == None):
             content_length = 0;
         else:
@@ -131,16 +129,17 @@ class HTTPClient(object):
             header = header + send_body
             header = header + '\r\n\r\n'
 
+        #sends request through the socket
         sock = self.connect(host, url.port)
         sock.send(header)
         sock_return = self.recvall(sock)
 
+        #splits up the return from socket to a code number and a body
         code = int(self.get_code(sock_return))
         body = self.get_body(sock_return)
         
         return HTTPRequest(code, body)
 
-    #def command(self, url, command="GET", args=None):
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
             return self.POST( url, args )
